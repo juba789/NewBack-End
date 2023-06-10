@@ -1,14 +1,27 @@
 const {User} =require("../mongo") 
+const bcrypt = require('bcrypt')
 
-
-function CreateUser(req,res){
+async function CreateUser(req,res){
     const {email,password}=req.body
-    const user = new User({email:email,password:password})
+
+    const hashedPassword= await hashPassword(password)
+
+    const user = new User({email:email,password:hashedPassword})
      user
      .save()
-     .then(()=>res.send({message:"utilisateur enregistré"}))
-     .catch(err=>console.log("User pas enregistré",err))
+     .then(()=>res.status(201).send({message:"utilisateur enregistré"}))
+     .catch((err)=>res.status(409).send({message:"utilisateur non enregistré :"+err}))
     
 }
 
-module.exports = {CreateUser}
+function hashPassword(password){
+    const saltRounds = 10;
+    return bcrypt.hash(password,saltRounds)
+    
+}
+function LogUser(req,res){
+const email = req.body.email
+const password =req.body.password
+}
+
+module.exports = {CreateUser,LogUser}

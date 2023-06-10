@@ -1,3 +1,4 @@
+require('dotenv').config()
 const express =require("express")
 const app = express()
 const cors =require("cors")
@@ -7,7 +8,7 @@ const port =3000
 require("./mongo")
 
 //Controllers
-const {CreateUser}= require("./controllers/users")
+const {CreateUser,LogUser}= require("./controllers/users")
 
 
 //Middleware
@@ -16,6 +17,7 @@ app.use(express.json())
 
 //Routes
 app.post("/api/auth/signup",CreateUser) 
+app.post("/api/auth/login",LogUser)
 app.get("/", (req,res)=>res.send("h"))
 
 //Listen
