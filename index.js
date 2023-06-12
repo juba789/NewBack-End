@@ -9,6 +9,7 @@ require("./mongo")
 
 //Controllers
 const {CreateUser,LogUser}= require("./controllers/users")
+const {getSauces}=require("./controllers/sauces")
 
 
 //Middleware
@@ -18,6 +19,7 @@ app.use(express.json())
 //Routes
 app.post("/api/auth/signup",CreateUser) 
 app.post("/api/auth/login",LogUser)
+app.get("/api/sauces",getSauces)
 app.get("/", (req,res)=>res.send("h"))
 
 //Listen
