@@ -18,11 +18,28 @@ const Product = mongoose.model("Product",productSchema)
 
 
 function getSauces(req,res){
-     console.log("le token est bon nous sommes dans getSauces")
-     Product.find({}).then(products=>res.send(products))
-    //res.send({message:[{sauce:"sauce1"},{sauce:"sauce2"}]})
+     Product.find({})
+     .then(products=>res.send(products))
+     .catch(error=>res.status(500).send(error))
+    }
+
+function getSauceById(req,res){
+    const{id}=req.params 
+    Product.findById(id)
+       .then(product=>res.send(product))
+       .catch(console.error)
+}
+
+function deleteSauce(req,res){
+const{id}=req.params
+Product.findByIdAndDelete(id)
+.then((product)=>res.send({message:product}))
+.catch(err=>res.status(500).send({message:err}))
 
 }
+
+
+
 
 function createSauce(req,res){
     const{body,file}=req
@@ -48,7 +65,10 @@ const product = new Product({
     usersDisliked: []  
 })
 
-product.save().then((res)=>console.log("produit enregistré",res)).catch(console.error)
+product
+.save()
+.then((message) => res.status(201).send({ message }))
+.catch((err) => res.status(500).send(err))
 }
 
-module.exports={getSauces,createSauce}
+module.exports={getSauces,createSauce,getSauceById,deleteSauce}

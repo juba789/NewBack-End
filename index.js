@@ -8,7 +8,7 @@ require("./mongo")
 
 //Controllers
 const {CreateUser,LogUser}= require("./controllers/users")
-const {getSauces,createSauce,getSauceById}=require("./controllers/sauces")
+const {getSauces,createSauce,getSauceById,deleteSauce}=require("./controllers/sauces")
 
 
 
@@ -25,6 +25,7 @@ app.post("/api/auth/login",LogUser)
 app.get("/api/sauces",authenticateUser,getSauces)
 app.post("/api/sauces",authenticateUser,upload.single("image"), createSauce)
 app.get("/api/sauces/:id",authenticateUser,getSauceById)
+app.delete("/api/sauces/:id",authenticateUser,deleteSauce)
 app.get("/", (req,res)=>res.send("h"))
 
 //Listen
