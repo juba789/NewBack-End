@@ -1,4 +1,5 @@
 const mongoose = require("mongoose")
+const unlink=require("fs").promises.unlink
 
 
 const productSchema =new mongoose.Schema({
@@ -26,19 +27,44 @@ function getSauces(req,res){
 function getSauceById(req,res){
     const{id}=req.params 
     Product.findById(id)
-       .then(product=>res.send(product))
+       .then((product)=>res.send(product))
        .catch(console.error)
 }
 
 function deleteSauce(req,res){
 const{id}=req.params
 Product.findByIdAndDelete(id)
-.then((product)=>res.send({message:product}))
+//.then(deleteImage)
+.then(product=>sendClientResponse(product,res))
 .catch(err=>res.status(500).send({message:err}))
-
 }
 
+/*function deleteImage(product){
+const {imageUrl}=product
+const fileToDelete=imageUrl.split("/").at(-1)
+ return unlink(`images/${fileToDelete}`).then(()=>product)
+}*/
 
+function modifySauce(req,res){
+    const {params:{id}}=req
+    const {body}=req
+    console.log("body et id",body,id)
+    Product.findByIdAndUpdate(id,body)
+    .then((dbResponse)=>sendClientResponse(dbResponse,res))
+    .catch((err)=>console.error("MAUVAIS UPDATING",err))
+}
+
+function sendClientResponse(product,res){
+    
+        if(product == null){
+            console.log("nothing updated")
+          return   res.status(404).send({message:"object not found in database"})
+        }   
+            console.log("bon updating",product)
+            res.status(200).send({message:"succes updated"})
+        
+    
+}
 
 
 function createSauce(req,res){
@@ -71,4 +97,4 @@ product
 .catch((err) => res.status(500).send(err))
 }
 
-module.exports={getSauces,createSauce,getSauceById,deleteSauce}
+module.exports={getSauces,createSauce,getSauceById,deleteSauce,modifySauce}
