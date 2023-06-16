@@ -1,32 +1,21 @@
 const bodyParser = require('body-parser')
 const {app,express} =require("./server")
+const {sauceRouter}=require("./routers/sauces.router")
+const {authRouter}=require("./routers/auth.router")
 const path = require("path")
 const port =3000
 
 //Connection to database
 require("./mongo")
 
-//Controllers
-const {CreateUser,LogUser}= require("./controllers/users")
-const {getSauces,createSauce,getSauceById,deleteSauce,modifySauce}=require("./controllers/sauces")
-
-
-
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({extended:true}))
 
 //Middleware
-const {upload}=require("./middleware/multer")
-const {authenticateUser} =require("./middleware/auth")
+app.use("/api/sauces",sauceRouter)
+app.use("/api/auth",authRouter)
 
-//Routes
-app.post("/api/auth/signup",CreateUser) 
-app.post("/api/auth/login",LogUser)
-app.get("/api/sauces",authenticateUser,getSauces)
-app.post("/api/sauces",authenticateUser,upload.single("image"), createSauce)
-app.get("/api/sauces/:id",authenticateUser,getSauceById)
-app.delete("/api/sauces/:id",authenticateUser,deleteSauce)
-app.put("/api/sauces/:id",authenticateUser,upload.single("image"),modifySauce)
+
 app.get("/", (req,res)=>res.send("h"))
 
 //Listen
