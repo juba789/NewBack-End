@@ -23,12 +23,14 @@ function getSauces(req,res){
      .then(products=>res.send(products))
      .catch(error=>res.status(500).send(error))
     }
-
+function getSauce(req,res){
+  const{id}=req.params 
+ return   Product.findById(id)
+}
 function getSauceById(req,res){
-    const{id}=req.params 
-    Product.findById(id)
-       .then((product)=>res.send(product))
-       .catch(console.error)
+    getSauce(req,res)
+       .then((product)=>sendClientResponse(product,res))
+       .catch((err)=>res.status(500).send(err))
 }
 
 function deleteSauce(req,res){
@@ -116,7 +118,7 @@ function sendClientResponse(product,res){
           return   res.status(404).send({message:"object not found in database"})
         }   
             console.log("bon updating",product)
-           return Promise.resolve(res.status(200).send({message:"succes updated"})).then(()=>product)
+           return Promise.resolve(res.status(200).send(product)).then(()=>product)
         
     
 }
@@ -152,4 +154,74 @@ product
 .catch((err) => res.status(500).send(err))
 }
 
-module.exports={getSauces,createSauce,getSauceById,deleteSauce,modifySauce}
+function likeSauce(req,res){
+  const like =req.body.like
+  const userId =req.body.userId
+  console.log({like})
+if(![-1,0,1].includes(like)) return res.status(403).send({message:"like invalide"})
+console.log ("VALEUR LIKE OK")
+
+ getSauce(req,res)
+ .then((product)=>updateVote(product,like,userId,res))
+ .then((pr)=>pr.save())
+ .then((prod)=>sendClientResponse(prod,res))
+ .catch((err)=>res.status(500).send(err))
+}
+
+function updateVote(product,like,userId,res){
+
+if(like===1 || like===-1) return incrementVote(product,userId,like)
+return resetVote(product,userId,like,res)
+
+}
+
+function resetVote(product,userId,res){
+const {usersLiked,usersDisliked}=product
+
+if([usersLiked,usersDisliked].every(arr=>arr.includes(userId))) 
+return Promise.reject("user voted both ways")
+
+if ( ! [usersLiked,usersDisliked].some(arr=>arr.includes(userId))) 
+return  Promise.reject("user has not yet voted")
+
+
+usersLiked.includes(userId)? --product.likes:--product.dislikes
+
+if(usersLiked.includes(userId)){
+  product.usersLiked=product.usersLiked.filter(id=>id!==userId)
+}
+else{
+  product.usersDisliked=product.usersDisliked.filter(id=>id!==userId)
+}
+
+
+return product
+}
+
+function incrementVote(product,userId,like){
+ const {usersLiked,usersDisliked} =product
+const votersArray=like===1?  usersLiked:usersDisliked
+
+if (votersArray.includes(userId)) return product
+  votersArray.push(userId)
+
+
+like===1?++product.likes:++product.dislikes
+
+return product
+}
+
+/*function decrementLike(product,userId){
+  const {usersDisliked} =product
+  if (usersDisliked.includes(userId)) return
+  usersDisliked.push(userId)
+  console.log("LE2",product.dislikes)
+  product.dislikes++
+  console.log(product.dislikes)
+}*/
+
+
+
+
+
+module.exports={getSauces,createSauce,getSauceById,deleteSauce,modifySauce,likeSauce}
