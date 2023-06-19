@@ -44,20 +44,6 @@ Product.findByIdAndDelete(id)
 
 
 
-/*function modifySauce(req,res){
-    const {params:{id}}=req
-
-    
-    const hasNewImage = req.file != null
-    const payload =makePayload(hasNewImage,req)
-    
-
-    Product.findByIdAndUpdate(id,payload)
-    .then((dbResponse)=>sendClientResponse(dbResponse,res))
-    .then((product)=>deleteImage(product))
-    .then((res)=>console.log("FILE DELETED",res))
-    .catch((err)=>console.error("MAUVAIS UPDATING",err))
-}*/
 function modifySauce(req, res) {
     const { params: { id } } = req;
     const hasNewImage = req.file != null;
@@ -213,3 +199,22 @@ return product
 }
 
 module.exports={getSauces,createSauce,getSauceById,deleteSauce,modifySauce,likeSauce}
+
+
+
+
+
+
+
+
+	
+	
+	
+
+	
+
+
+
+
+
+	
