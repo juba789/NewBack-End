@@ -185,12 +185,13 @@ if ( ! [usersLiked,usersDisliked].some(arr=>arr.includes(userId)))
 return  Promise.reject("user has not yet voted")
 
 
-usersLiked.includes(userId)? --product.likes:--product.dislikes
 
 if(usersLiked.includes(userId)){
+  --product.likes
   product.usersLiked=product.usersLiked.filter(id=>id!==userId)
 }
 else{
+  --product.dislikes
   product.usersDisliked=product.usersDisliked.filter(id=>id!==userId)
 }
 
@@ -210,18 +211,5 @@ like===1?++product.likes:++product.dislikes
 
 return product
 }
-
-/*function decrementLike(product,userId){
-  const {usersDisliked} =product
-  if (usersDisliked.includes(userId)) return
-  usersDisliked.push(userId)
-  console.log("LE2",product.dislikes)
-  product.dislikes++
-  console.log(product.dislikes)
-}*/
-
-
-
-
 
 module.exports={getSauces,createSauce,getSauceById,deleteSauce,modifySauce,likeSauce}
