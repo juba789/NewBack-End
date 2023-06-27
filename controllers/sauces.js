@@ -1,7 +1,7 @@
 const mongoose = require("mongoose")
 const { unlink } = require("fs/promises")
 
-
+//Définition du schéma du produit
 const productSchema =new mongoose.Schema({
     userId: String,
     name: String,
@@ -17,185 +17,189 @@ const productSchema =new mongoose.Schema({
 })
 const Product = mongoose.model("Product",productSchema)
 
-
-function getSauces(req,res){
-     Product.find({})
-     .then(products=>res.send(products))
-     .catch(error=>res.status(500).send(error))
-    }
-function getSauce(req,res){
-  const{id}=req.params 
- return   Product.findById(id)
-}
-function getSauceById(req,res){
-    getSauce(req,res)
-       .then((product)=>sendClientResponse(product,res))
-       .catch((err)=>res.status(500).send(err))
+//Récupère toutes les sauces
+function getSauces(req, res) {
+  Product.find({})
+    .then(products => res.send(products))
+    .catch(error => res.status(500).send(error))
 }
 
-function deleteSauce(req,res){
-const{id}=req.params
-Product.findByIdAndDelete(id)
-.then(product=>sendClientResponse(product,res))
-.then((item)=>deleteImage(item))
-.then((res)=>console.log("FILE DELETED",res))
-.catch(err=>res.status(500).send({message:err}))
+//Récupère une sauce spécifique par son ID
+function getSauce(req, res) {
+  const { id } = req.params
+  return Product.findById(id)
 }
 
+//Récupère une sauce spécifique par son ID et envoie la réponse au client
+function getSauceById(req, res) {
+  getSauce(req, res)
+    .then((product) => sendClientResponse(product, res))
+    .catch((err) => res.status(500).send(err))
+}
 
+//Fonction de Suppression d'une sauce spécifique par son ID et de l'image associée
+function deleteSauce(req, res) {
+  const { id } = req.params
+  Product.findByIdAndDelete(id)
+    .then(product => sendClientResponse(product, res))
+    .then((item) => deleteImage(item))
+    .then((res) => console.log("fichier supprimé", res))
+    .catch(err => res.status(500).send({ message: err }))
+}
 
+//Foction qui Modifie une sauce spécifique par son ID
 function modifySauce(req, res) {
-    const { params: { id } } = req;
-    const hasNewImage = req.file != null;
-    const payload = makePayload(hasNewImage, req);
-  
-    // Vérifier si une nouvelle image a été fournie
-    if (hasNewImage) {
-      Product.findById(id)
-        .then((product) => {
-          if (product == null) {
-            console.log("Sauce not found");
-            return res.status(404).send({ message: "Sauce not found in database" });
-          }
-          // Supprimer l'image précédente
-          const imageToDelete = product.imageUrl.split("/").at(-1);
-          return unlink("images/" + imageToDelete);
-        })
-        .then(() => {
-          // Mettre à jour la sauce avec le nouveau payload
-          return Product.findByIdAndUpdate(id, payload);
-        })
-        .then((dbResponse) => sendClientResponse(dbResponse, res))
-        .catch((err) => {
-          console.error("Error updating sauce:", err);
-          return res.status(500).send({ message: "Error updating sauce" });
+  const { params: { id } } = req;
+  const hasNewImage = req.file != null;
+  const payload = makePayload(hasNewImage, req);
+
+  if (hasNewImage) {
+    Product.findById(id)
+      .then((product) => {
+        if (product == null) {
+          console.log("Sauce not found");
+          return res.status(404).send({
+            message: "Sauce introuvable dans la base de donnée"
+          });
+        }
+
+        const imageToDelete = product.imageUrl.split("/").at(-1);
+        return unlink("images/" + imageToDelete);
+      })
+      .then(() => {
+
+        return Product.findByIdAndUpdate(id, payload);
+      })
+      .then((dbResponse) => sendClientResponse(dbResponse, res))
+      .catch((err) => {
+        console.error("Error updating sauce:", err);
+        return res.status(500).send({
+          message: "Erreur lors de la mise à jour de la sauce"
         });
-    } else {
-      // Aucune nouvelle image, mettre simplement à jour la sauce
-      Product.findByIdAndUpdate(id, payload)
-        .then((dbResponse) => sendClientResponse(dbResponse, res))
-        .catch((err) => {
-          console.error("Error updating sauce:", err);
-          return res.status(500).send({ message: "Error updating sauce" });
+      });
+  } else {
+
+    Product.findByIdAndUpdate(id, payload)
+      .then((dbResponse) => sendClientResponse(dbResponse, res))
+      .catch((err) => {
+        console.error("Error updating sauce:", err);
+        return res.status(500).send({
+          message: "Erreur lors de la mise à jour de la sauce"
         });
-    }
+      });
   }
-  
-
-function deleteImage(product){
-if(product==null) return
-const imageToDelete=product.imageUrl.split("/").at(-1)
- return unlink("images/"+imageToDelete)
 }
 
-function makePayload(hasNewImage,req){
-    console.log("hasNewImage",hasNewImage)
-    if(!hasNewImage) return req.body
-    const payload = JSON.parse(req.body.sauce)
-    payload.imageUrl=makeImageUrl(req,req.file.fileName)
-    console.log("VOICI LE PAYLOAD:",payload)
-    return payload
+//Fonction qui supprime l'image associée au produit
+function deleteImage(product) {
+  if (product == null) return
+  const imageToDelete = product.imageUrl.split("/").at(-1)
+  return unlink("images/" + imageToDelete)
 }
 
-function sendClientResponse(product,res){
-    
-        if(product == null){
-            console.log("nothing updated")
-          return   res.status(404).send({message:"object not found in database"})
-        }   
-            console.log("bon updating",product)
-           return Promise.resolve(res.status(200).send(product)).then(()=>product)
-        
-    
+//Crée le payload pour la modification de la sauce
+function makePayload(hasNewImage, req) {
+  if (!hasNewImage) return req.body
+  const payload = JSON.parse(req.body.sauce)
+  payload.imageUrl = makeImageUrl(req, req.file.fileName)
+  return payload
 }
+
+//Fonction d'envoie de la réponse au client
+function sendClientResponse(product, res) {
+  if (product == null) {
+    return res.status(404).send({
+      message: "Produit introuvable dans le base de donnée"
+    })
+  }
+  return Promise.resolve(res.status(200).send(product)).then(() => product)
+}
+
+//Fonction de création de l'URL complète avec le nom du fichier de l'image
 function makeImageUrl(req, fileName) {
-    return req.protocol + "://" + req.get("host") + "/images/" + fileName
-  }
+  return req.protocol + "://" + req.get("host") + "/images/" + fileName
+}
 
+//Fonction pour créer une nouvelle sauce
 function createSauce(req,res){
-    const{body,file}=req
-    const { fileName } = file
-    const sauce = JSON.parse(body.sauce)
-    const { name, manufacturer, description, mainPepper, heat, userId } = sauce
-    
-    
-    
-const product = new Product({
-    userId: userId,
-    name: name,
-    manufacturer: manufacturer,
-    description: description,
-    mainPepper: mainPepper,
-    imageUrl:makeImageUrl(req, fileName),
-    heat: heat,
-    likes: 0,
-    dislikes: 0,
-    usersLiked: [],
-    usersDisliked: []  
+  const{body,file}=req
+  const { fileName } = file
+  const sauce = JSON.parse(body.sauce)
+  const { name, manufacturer, description, mainPepper, heat, userId } = sauce
+
+  //Création d'une nouvelle instance de Product avec les données de la sauce
+  const product = new Product({
+   userId: userId,
+   name: name,
+   manufacturer: manufacturer,
+   description: description,
+   mainPepper: mainPepper,
+   imageUrl:makeImageUrl(req, fileName),
+   heat: heat,
+   likes: 0,
+   dislikes: 0,
+   usersLiked: [],
+   usersDisliked: []  
 })
 
+ // Sauvegarde du produit dans la base de données
 product
-.save()
-.then((message) => res.status(201).send({ message }))
-.catch((err) => res.status(500).send(err))
+  .save()
+  .then((message) => res.status(201).send({ message }))
+  .catch((err) => res.status(500).send(err))
 }
 
-function likeSauce(req,res){
-  const like =req.body.like
-  const userId =req.body.userId
-  console.log({like})
-if(![-1,0,1].includes(like)) return res.status(403).send({message:"like invalide"})
-console.log ("VALEUR LIKE OK")
+//Fonction de gestion des likes et des dislikes d'une sauce
+function likeSauce(req, res) {
+  const like = req.body.like
+  const userId = req.body.userId
 
- getSauce(req,res)
- .then((product)=>updateVote(product,like,userId,res))
- .then((pr)=>pr.save())
- .then((prod)=>sendClientResponse(prod,res))
- .catch((err)=>res.status(500).send(err))
+  if (![-1, 0, 1].includes(like)) return res.status(403).send({ message: "like invalide" })
+  getSauce(req, res)
+    .then((product) => updateVote(product, like, userId, res))
+    .then((pr) => pr.save())
+    .then((prod) => sendClientResponse(prod, res))
+    .catch((err) => res.status(500).send(err))
 }
 
+//Fonction qui Met à jour les votes de la sauce en fonction de l'option "like"
 function updateVote(product,like,userId,res){
-
-if(like===1 || like===-1) return incrementVote(product,userId,like)
+if(like ===1 || like ===-1) return incrementVote(product,userId,like)
 return resetVote(product,userId,like,res)
-
 }
 
-function resetVote(product,userId,res){
-const {usersLiked,usersDisliked}=product
+//Fonction de réinitialisation des votes d'une sauce
+function resetVote(product, userId, res) {
+  const { usersLiked,usersDisliked } = product
 
-if([usersLiked,usersDisliked].every(arr=>arr.includes(userId))) 
-return Promise.reject("user voted both ways")
+  if ([usersLiked, usersDisliked].every(arr => arr.includes(userId)))
+     return Promise.reject("l'utilisateur a voté dans les deux sens")
 
-if ( ! [usersLiked,usersDisliked].some(arr=>arr.includes(userId))) 
-return  Promise.reject("user has not yet voted")
+  if (![usersLiked, usersDisliked].some(arr => arr.includes(userId)))
+     return Promise.reject("l'utilisateur n'a pas encore voté")
 
+  if (usersLiked.includes(userId)) {
+     --product.likes
+     product.usersLiked = product.usersLiked.filter(id => id !== userId)
+  } else {
+     --product.dislikes
+     product.usersDisliked = product.usersDisliked.filter(id => id !== userId)
+  }
 
-
-if(usersLiked.includes(userId)){
-  --product.likes
-  product.usersLiked=product.usersLiked.filter(id=>id!==userId)
-}
-else{
-  --product.dislikes
-  product.usersDisliked=product.usersDisliked.filter(id=>id!==userId)
-}
-
-
-return product
+  return product
 }
 
-function incrementVote(product,userId,like){
- const {usersLiked,usersDisliked} =product
-const votersArray=like===1?  usersLiked:usersDisliked
+//Incrémente les votes d'une sauce
+function incrementVote(product, userId, like) {
+  const { usersLiked,usersDisliked } = product
+  const votersArray = like === 1 ? usersLiked : usersDisliked
 
-if (votersArray.includes(userId)) return product
+  if (votersArray.includes(userId)) return product
   votersArray.push(userId)
 
+  like === 1 ? ++product.likes : ++product.dislikes
 
-like===1?++product.likes:++product.dislikes
-
-return product
+  return product
 }
 
 module.exports={getSauces,createSauce,getSauceById,deleteSauce,modifySauce,likeSauce}

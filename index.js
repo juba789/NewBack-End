@@ -5,17 +5,15 @@ const bodyParser = require('body-parser')
 const path = require("path")
 const port =3000
 
-//Connection to database
+//Connexion à la base de données
 require("./mongo")
-
-app.use(bodyParser.urlencoded({extended:true}))
 
 //Middleware
 app.use(bodyParser.json())
 app.use("/api/sauces",sauceRouter)
 app.use("/api/auth",authRouter)
 
-
+//Routes
 app.get("/", (req,res)=>res.send("h"))
 
 //Listen
