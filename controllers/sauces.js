@@ -1,5 +1,7 @@
 const mongoose = require("mongoose")
 const { unlink } = require("fs/promises")
+const jwt= require('jsonwebtoken')
+
 
 //Définition du schéma du produit
 const productSchema =new mongoose.Schema({
@@ -47,27 +49,37 @@ function deleteSauce(req, res) {
     .catch(err => res.status(500).send({ message: err }))
 }
 
-//Foction qui Modifie une sauce spécifique par son ID
 function modifySauce(req, res) {
   const { params: { id } } = req;
   const hasNewImage = req.file != null;
   const payload = makePayload(hasNewImage, req);
 
+  // Vérification de l'User qui veut modifier
+  const token = req.headers.authorization.split(' ')[1];
+  // Décode le token
+  const decodedToken = jwt.verify(token, process.env.JWT_PASSWORD);
+  // Extraire l'id de l'utilisateur actuel et le comparer avec l'id de l'auteur du produit
+  const userIdAct = decodedToken.userId;
+
   if (hasNewImage) {
+    // Vérifier l'autorisation de l'utilisateur avant de supprimer l'image existante
     Product.findById(id)
       .then((product) => {
         if (product == null) {
           console.log("Sauce not found");
           return res.status(404).send({
-            message: "Sauce introuvable dans la base de donnée"
+            message: "Sauce introuvable dans la base de données"
           });
+        }
+        
+        if (userIdAct !== product.userId) {
+          return res.status(403).send({ message: "403: unauthorized request" });
         }
 
         const imageToDelete = product.imageUrl.split("/").at(-1);
         return unlink("images/" + imageToDelete);
       })
       .then(() => {
-
         return Product.findByIdAndUpdate(id, payload);
       })
       .then((dbResponse) => sendClientResponse(dbResponse, res))
@@ -78,8 +90,22 @@ function modifySauce(req, res) {
         });
       });
   } else {
+    // Vérifier l'autorisation de l'utilisateur avant de modifier les autres données
+    Product.findById(id)
+      .then((product) => {
+        if (product == null) {
+          console.log("Sauce not found");
+          return res.status(404).send({
+            message: "Sauce introuvable dans la base de données"
+          });
+        }
+        
+        if (userIdAct !== product.userId) {
+          return res.status(403).send({ message: "403: unauthorized request" });
+        }
 
-    Product.findByIdAndUpdate(id, payload)
+        return Product.findByIdAndUpdate(id, payload);
+      })
       .then((dbResponse) => sendClientResponse(dbResponse, res))
       .catch((err) => {
         console.error("Error updating sauce:", err);

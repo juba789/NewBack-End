@@ -34,7 +34,7 @@ async function LogUser(req, res) {
         message: "mot de passe incorrecte"
       })
     }
-    const token = createToken(email)
+    const token = createToken(user._id)
     res.status(200).send({
       userId: user._id,
       token: token
@@ -45,12 +45,13 @@ async function LogUser(req, res) {
       message: "erreur interne"
     })
   }
+
 }
 
 //Fonction pour créer un jeton JWT
-function createToken(email) {
+function createToken(userId) {
   const jwtPassword = process.env.JWT_PASSWORD
-  const token = jwt.sign({ email: email }, jwtPassword, { expiresIn : "24h" })
+  const token = jwt.sign({ userId: userId }, jwtPassword, { expiresIn : "24h" })
   return token
 }
 module.exports = {CreateUser,LogUser}
